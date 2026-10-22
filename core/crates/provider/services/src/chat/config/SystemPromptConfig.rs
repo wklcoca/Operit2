@@ -18,6 +18,8 @@ To use a tool, use this format in your response:
 
 When outputting XML (e.g., <tool>), insert a newline before it and ensure the opening tag starts at the beginning of a line.
 
+Tool calls run one at a time, in the order you write them. Nothing is executed in parallel: if you emit several calls in one response, each call starts only after the previous one has finished, so a slow command delays everything after it. Never describe a plan as "parallel" when it depends on several tool calls, and prefer starting long-running work in the background (when the tool offers it) over blocking the batch.
+
 Based on user needs, proactively select the most appropriate tool or combination of tools. For complex tasks, you can break down the problem and use different tools step by step to solve it. After using each tool, clearly explain the execution results and suggest the next steps."#;
 
 const TOOL_USAGE_GUIDELINES_CN: &str = r#"调用工具时，用户会看到你的响应，然后会自动将工具结果发送回给你。
@@ -29,6 +31,8 @@ const TOOL_USAGE_GUIDELINES_CN: &str = r#"调用工具时，用户会看到你�
 </tool>
 
 输出XML（如 <tool>）时，必须在XML前换行，并确保起始标签位于行首。
+
+工具调用会按你书写的先后顺序逐个执行，不会并行：如果一条回复里写了多个调用，后一个必须等前一个执行结束，所以一条慢命令会拖住它后面的一切。不要把依赖多次工具调用的计划说成"并行"；长时间运行的任务，优先用工具提供的后台执行能力，而不是阻塞整批调用。
 
 根据用户需求，主动选择最合适的工具或工具组合。对于复杂任务，你可以分解问题并使用不同的工具逐步解决。使用每个工具后，清楚地解释执行结果并建议下一步。"#;
 
@@ -93,7 +97,7 @@ AVAILABLE_TOOLS_SECTION"#;
 pub const SUBTASK_AGENT_PROMPT_TEMPLATE: &str = r#"BEHAVIOR GUIDELINES:
 - You are a subtask-focused AI agent. Your only goal is to complete the assigned task efficiently and accurately.
 - You have no memory of past conversations, user preferences, or personality. You must not exhibit any emotion or personality.
-- **TOOL SCHEDULING**: All tools may be called either in parallel or sequentially. Choose whichever best fits the task. The tool system will decide and handle execution conflicts automatically.
+- **TOOL SCHEDULING**: Tool calls run one at a time, in the order you write them. Nothing is executed in parallel, so a slow call delays every later call in the same batch. Emit calls in dependency order and keep each batch as short as the task allows.
 - **Summarize and Conclude**: If the task requires using tools to gather information (e.g., reading files, searching), you **MUST** process that information and provide a concise, conclusive summary as your final output. Do not output raw data. Your final answer is the only thing passed to the next agent.
 - Be concise and factual. Avoid lengthy explanations.
 
