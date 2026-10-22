@@ -47,13 +47,13 @@ type PersistedTerminalOutput = {
         "zh": "超级管理员",
         "en": "Super Admin"
     },
-    "description": { "zh": "超级管理员工具集，提供终端命令和会话控制的高级功能。", "en": "Super admin toolkit providing advanced terminal command and session control capabilities." },
+    "description": { "zh": "超级管理员工具集，提供终端命令和会话控制的高级功能。耗时的命令可以用 background=\"true\" 启动、立即拿到 sessionId，之后用 terminal_wait / get_screen 跟进，期间继续做别的事。", "en": "Super admin toolkit providing advanced terminal command and session control capabilities. Long commands can be started with background=\"true\" (returns a sessionId immediately) and followed up with terminal_wait / get_screen while you continue with other work." },
     "enabledByDefault": true,
     "category": "System",
     "tools": [
         {
             "name": "terminal_wait",
-            "description": { "zh": "等待同一终端会话中的上一条命令执行完成。与 sleep 不同，本工具会在命令实际完成时提前返回，而不是固定睡眠。超时时会取消当前执行中的命令并保留终端会话。", "en": "Wait until the previous command in the same terminal session finishes. Unlike sleep, this tool can return early as soon as the command actually completes. On timeout, the currently executing command is cancelled and the terminal session is kept." },
+            "description": { "zh": "等待同一终端会话中的上一条命令执行完成。与 sleep 不同，本工具会在命令实际完成时提前返回，而不是固定睡眠。典型用法：先用 background=\"true\" 启动耗时命令并拿到 sessionId，做完其他工具调用后再调用本工具等待它结束。超时时会取消当前执行中的命令并保留终端会话。", "en": "Wait until the previous command in the same terminal session finishes. Unlike sleep, this tool can return early as soon as the command actually completes. Typical usage: start the slow command with background=\"true\", do other tool calls, then call this to wait for it. On timeout, the currently executing command is cancelled and the terminal session is kept." },
             "parameters": [
                 {
                     "name": "sessionId",
@@ -71,7 +71,7 @@ type PersistedTerminalOutput = {
         },
         {
             "name": "get_screen",
-            "description": { "zh": "获取当前终端会话可见屏幕内容（仅一屏，不包含历史滚动缓冲）。", "en": "Get the current visible screen content for the active terminal session (single screen only, no scrollback history)." },
+            "description": { "zh": "获取当前终端会话可见屏幕内容（仅一屏，不包含历史滚动缓冲）。适合查看 background=\"true\" 启动的命令当前跑到哪一步；要看完整长日志，请让命令把输出重定向到文件，再用 read_file_part / grep_code 读取。", "en": "Get the current visible screen content for the active terminal session (single screen only, no scrollback history). Useful for checking where a command started with background=\"true\" currently is; for complete long logs, redirect the output to a file inside the command and read it with read_file_part / grep_code." },
             "parameters": [
                 {
                     "name": "sessionId",
@@ -124,7 +124,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -148,7 +148,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -179,7 +179,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -210,7 +210,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -241,7 +241,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -272,7 +272,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -296,7 +296,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果），\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs in background and returns immediately (good for long-running tasks like servers; AI will not receive output). 'false' or omitted runs in foreground and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
@@ -327,7 +327,7 @@ type PersistedTerminalOutput = {
                         },
                         {
                             "name": "background",
-                            "description": { "zh": "是否在后台运行命令,\"true\" 表示后台执行并立即返回,适合启动服务器等长时间运行的任务（AI 不会收到该命令的输出结果）,\"false\" 或未提供则前台执行并等待并返回命令结果", "en": "Run command in background. 'true' runs the command in the background and returns immediately, suitable for long-running servers. 'false' or omitted waits for and returns the command result." },
+                            "description": { "zh": "是否在后台运行。\"true\"：立即返回 sessionId，命令在该会话里继续运行，这期间你可以继续调用其他工具；之后用 terminal_wait 等它结束（完成即返回），用 get_screen 看当前屏幕。长日志请让命令自己重定向到文件（例如 > /tmp/build.log 2>&1），再用 read_file_part / grep_code 读取完整内容。适合编译、安装依赖、跑测试这类可能超过十几秒的任务。\"false\" 或未提供：前台执行，等命令结束并返回输出；超过 timeoutMs 会被取消。", "en": "Run in the background. 'true': returns immediately with a sessionId and the command keeps running in that session while you make other tool calls; read its progress later with terminal_wait (returns as soon as it finishes) and get_screen (current screen only). For long logs, redirect inside the command (e.g. > /tmp/build.log 2>&1) and read the file with read_file_part / grep_code. Use this for work that may exceed ~15s: builds, dependency installs, test suites. 'false' or omitted: run in the foreground, wait for the command and return its output; the command is cancelled if it exceeds timeoutMs." },
                             "type": "string",
                             "required": false
                         },
